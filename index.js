@@ -30,10 +30,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('create-message', (msg) => {
-    const data = joinedUsers.get(socket.id)
-    const messageData = { message: msg, sender: data };
+    const data = joinedUsers.get(socket.id) // 用socket.id來取得sender的data
+    const messageData = { message: msg, sender: data }; // 訊息資料包含sender的data
     console.log('Message from user', socket.id, ':', messageData);
-    io.emit('create-message', messageData);
+    io.emit('create-message', messageData); // 將完整的訊息資料發送給客戶端
   });
 
   socket.on('privateUser-joined', (data) => {
