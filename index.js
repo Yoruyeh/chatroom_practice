@@ -18,7 +18,7 @@ io.listen(4000);
 const joinedUsers = new Map(); 
 // 建立離線的users物件
 const leftUsers = new Map();
-
+const userChatPartners = new Map()
 
 io.on('connection', (socket) => {
   // 印出已連線的加入者的socket id
@@ -44,9 +44,10 @@ io.on('connection', (socket) => {
     io.emit('create-message', messageData); 
   });
 
-  socket.on('private-message', ({ receiverId, value }) => {
+  socket.on('private-message', ({ userInfo, value }) => {
     // 用socket.id取出sender的userId
     const senderId = joinedUsers.get(socket.id).id
+    const receiverId = userInfo.id
     // 用sender和receiver的id命名房間名，並且用sort()排序確保兩個用戶之間的房間名一致
     const sortedIds = [senderId, receiverId].sort().join('-');
     // 用socket join連線到房間
@@ -55,8 +56,24 @@ io.on('connection', (socket) => {
     // 訊息資料包含sender的data
     const data = joinedUsers.get(socket.id)
     const messageData = { message: value, sender: data };
+
+    // 将对方的信息添加到用户的对话列表中
+    if (!userChatPartners.has(senderId)) {
+        userChatPartners.set(senderId, []);
+    }
+    if (!userChatPartners.get(senderId).find(user => user.id === receiverId)) {
+        userChatPartners.get(senderId).push(userInfo);
+    }
+    console.log('user-partners: ', userChatPartners)
+
     // 將訊息發送到該房間，只有進入房間的人才能看見訊息
     io.to(roomName).emit('private-message', messageData);
+  });
+
+  socket.on('get-chat-partners', () => {
+    const userId = joinedUsers.get(socket.id).id;
+    const chatPartners = userChatPartners.get(userId) || [];
+    io.emit('get-chat-partners', chatPartners);
   });
 
   socket.on('disconnect', () => {
