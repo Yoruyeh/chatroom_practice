@@ -23,24 +23,48 @@ io.listen(4000);
 const joinedUsers = new Map();
 const leftUsers = new Map();
 const clients = new Map();
+const privateUsers = new Map()
 
 io.on('connection', (socket) => {
   console.log('New user connected, ID:', socket.id);
 
+  socket.on('user-joined', (data) => {
+    clients.set(socket.id, data)
+    joinedUsers.set(data.id, data); // 將新用戶加入joinedUsers列表
+    console.log('User joined, ID:', socket.id);
+    console.log(`User ${data.name} has joined.`);
+    console.log(Array.from(joinedUsers.values()))
+    io.emit('user-joined', Array.from(joinedUsers.values())); // 將完整的用戶發送給客戶端
+  });
+
   socket.on('create-message', (msg) => {
   const data = clients.get(socket.id)
+  console.log(clients)
   const messageData = { message: msg, sender: data };
   console.log('Message from user', socket.id, ':', messageData);
   io.emit('create-message', messageData);
   });
 
-   socket.on('user-joined', (data) => {
-    clients.set(socket.id, data)
-    joinedUsers.set(data.userId, data); // 將新用戶加入joinedUsers列表
+  socket.on('privateUser-joined', (data) => {
+    privateUsers.set(socket.id, data)
     console.log('User joined, ID:', socket.id);
-    console.log(`User ${data.userName} has joined.`);
-    console.log(Array.from(joinedUsers.values()))
-    io.emit('user-joined', Array.from(joinedUsers.values())); // 將完整的用戶發送給客戶端
+    console.log(`User ${data.currentMemberInfo.name} has joined.`);
+    console.log(privateUsers.values())
+    io.emit('privateUser-joined', privateUsers.values()); // 將完整的用戶發送給客戶端
+  });
+
+
+  socket.on('privateMessage', ({ receiverId, value }) => {
+    // 构建房间名
+    const roomName = `${socket.id}-${receiverId}`;
+    
+    // 让当前 socket 加入到该房间
+    socket.join(roomName);
+    const data = privateUsers.get(socket.id)
+    const messageData = { message: value, sender: data.currentMemberInfo };
+    console.log(messageData)
+    // 将消息发送到该房间，只有加入到该房间的 socket（即用户B）才能接收到这条消息
+    io.to(roomName).emit('privateMessage', messageData);
   });
 
   socket.on('disconnect', () => {
