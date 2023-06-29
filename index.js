@@ -26,29 +26,36 @@ io.on('connection', (socket) => {
 
   // 監聽user-joined事件，data為當前用戶資料currentMemberInfo
   socket.on('user-joined', (data) => {
-    joinedUsers.set(socket.id, data); // 以socket.id為key，將新用戶data加入joinedUsers
+    // 以socket.id為key，將新用戶data加入joinedUsers
+    joinedUsers.set(socket.id, data); 
     console.log(`${data.name} joined, ID:`, socket.id);
-    io.emit('user-joined', Array.from(joinedUsers.values())); // 將完整的joinedUsers發送給客戶端，取值並從物件改為陣列
+    // 將完整的joinedUsers發送給客戶端，取值並從物件改為陣列
+    io.emit('user-joined', Array.from(joinedUsers.values())); 
   });
 
   // 監聽create-message事件，msg為當前用戶在公開聊天室input裡輸入的value
   socket.on('create-message', (msg) => {
-    const data = joinedUsers.get(socket.id) // 用socket.id來取得sender的data
-    const messageData = { message: msg, sender: data }; // 訊息資料包含sender的data
+    // 用socket.id來取得sender的data
+    const data = joinedUsers.get(socket.id) 
+    // 訊息資料包含sender的data
+    const messageData = { message: msg, sender: data }; 
     console.log('Message from user', socket.id, ':', messageData);
-    io.emit('create-message', messageData); // 將完整的訊息資料發送給客戶端
+    // 將完整的訊息資料發送給客戶端
+    io.emit('create-message', messageData); 
   });
 
   socket.on('private-message', ({ receiverId, value }) => {
+    // 用socket.id取出sender的userId
     const senderId = joinedUsers.get(socket.id).id
-    console.log(senderId)
+    // 用sender和receiver的id命名房間名，並且用sort()排序確保兩個用戶之間的房間名一致
     const sortedIds = [senderId, receiverId].sort().join('-');
-    console.log(sortedIds)
+    // 用socket join連線到房間
     const roomName = `Room-${sortedIds}`
     socket.join(roomName);
+    // 訊息資料包含sender的data
     const data = joinedUsers.get(socket.id)
     const messageData = { message: value, sender: data };
-    // 将消息发送到该房间，只有加入到该房间的 socket（即用户B）才能接收到这条消息
+    // 將訊息發送到該房間，只有進入房間的人才能看見訊息
     io.to(roomName).emit('private-message', messageData);
   });
 
