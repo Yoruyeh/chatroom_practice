@@ -60,15 +60,13 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected, ID:', socket.id);
-    if(clients.has(socket.id)) {
-      const data = clients.get(socket.id)
-      const username = data.userName;
-      console.log(`User ${username} has disconnected.`);
-      joinedUsers.delete(data.userId)// 將離開的用戶從joinedUsers列表刪除
-      leftUsers.set(data.userId, data); // 將離開的用戶加入leftUsers列表
-      clients.delete(socket.id);
+    if(joinedUsers.has(socket.id)) {
+      const data = joinedUsers.get(socket.id)
+      console.log(`${data.name} has disconnected.`);
+      joinedUsers.delete(socket.id)// 將離開的用戶從joinedUsers列表刪除
+      leftUsers.set(socket.id, data); // 將離開的用戶加入leftUsers列表
     }
-    io.emit('user-joined', Array.from(joinedUsers.values()))
+    io.emit('user-joined', Array.from(joinedUsers.values())) // 將更新後的用戶發送給客戶端
     io.emit('user-left', Array.from(leftUsers.values())); // 將更新後的用戶發送給客戶端
   });
 });
