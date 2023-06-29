@@ -10,10 +10,13 @@ const io = new Server({
   }
 });
 
-io.listen(4000);
 // 服務器端socket在port 4000運行
+io.listen(4000);
 
-const joinedUsers = new Map(); // 建立加入公開聊天室的users物件
+
+// 建立上線的users物件
+const joinedUsers = new Map(); 
+// 建立離線的users物件
 const leftUsers = new Map();
 
 
@@ -28,6 +31,7 @@ io.on('connection', (socket) => {
     io.emit('user-joined', Array.from(joinedUsers.values())); // 將完整的joinedUsers發送給客戶端，取值並從物件改為陣列
   });
 
+  // 監聽create-message事件，msg為當前用戶在公開聊天室input裡輸入的value
   socket.on('create-message', (msg) => {
     const data = joinedUsers.get(socket.id) // 用socket.id來取得sender的data
     const messageData = { message: msg, sender: data }; // 訊息資料包含sender的data
@@ -35,17 +39,17 @@ io.on('connection', (socket) => {
     io.emit('create-message', messageData); // 將完整的訊息資料發送給客戶端
   });
 
-  socket.on('privateMessage', ({ receiverId, value }) => {
-    // 构建房间名
-    const roomName = `${socket.id}-${receiverId}`;
-    
-    // 让当前 socket 加入到该房间
+  socket.on('private-message', ({ receiverId, value }) => {
+    const senderId = joinedUsers.get(socket.id).id
+    console.log(senderId)
+    const sortedIds = [senderId, receiverId].sort().join('-');
+    console.log(sortedIds)
+    const roomName = `Room-${sortedIds}`
     socket.join(roomName);
     const data = joinedUsers.get(socket.id)
     const messageData = { message: value, sender: data };
-    console.log(messageData)
     // 将消息发送到该房间，只有加入到该房间的 socket（即用户B）才能接收到这条消息
-    io.to(roomName).emit('privateMessage', messageData);
+    io.to(roomName).emit('private-message', messageData);
   });
 
   socket.on('disconnect', () => {
