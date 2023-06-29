@@ -12,37 +12,28 @@ const io = new Server({
 
 io.listen(4000);
 // 服務器端socket在port 4000運行
-// import { io } from 'socket.io-client';
-// // "undefined" means the URL will be computed from the `window.location` object
-// const URL = process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:4000';
-// export const socket = io(URL, {
-//   autoConnect: false
-// });
 
-
-const joinedUsers = new Map();
+const joinedUsers = new Map(); // 建立加入公開聊天室的users物件
 const leftUsers = new Map();
-const clients = new Map();
+// const clients = new Map();
 const privateUsers = new Map()
 
 io.on('connection', (socket) => {
+  // 印出已連線的加入者的socket id
   console.log('New user connected, ID:', socket.id);
 
+  // 監聽user-joined事件，data為當前用戶資料currentMemberInfo
   socket.on('user-joined', (data) => {
-    clients.set(socket.id, data)
-    joinedUsers.set(data.id, data); // 將新用戶加入joinedUsers列表
-    console.log('User joined, ID:', socket.id);
-    console.log(`User ${data.name} has joined.`);
-    console.log(Array.from(joinedUsers.values()))
-    io.emit('user-joined', Array.from(joinedUsers.values())); // 將完整的用戶發送給客戶端
+    joinedUsers.set(socket.id, data); // 以socket.id為key，將新用戶data加入joinedUsers
+    console.log(`${data.name} joined, ID:`, socket.id);
+    io.emit('user-joined', Array.from(joinedUsers.values())); // 將完整的joinedUsers發送給客戶端，取值並從物件改為陣列
   });
 
   socket.on('create-message', (msg) => {
-  const data = clients.get(socket.id)
-  console.log(clients)
-  const messageData = { message: msg, sender: data };
-  console.log('Message from user', socket.id, ':', messageData);
-  io.emit('create-message', messageData);
+    const data = joinedUsers.get(socket.id)
+    const messageData = { message: msg, sender: data };
+    console.log('Message from user', socket.id, ':', messageData);
+    io.emit('create-message', messageData);
   });
 
   socket.on('privateUser-joined', (data) => {
@@ -61,7 +52,7 @@ io.on('connection', (socket) => {
     // 让当前 socket 加入到该房间
     socket.join(roomName);
     const data = privateUsers.get(socket.id)
-    const messageData = { message: value, sender: data.currentMemberInfo };
+    const messageData = { message: value, sender: data };
     console.log(messageData)
     // 将消息发送到该房间，只有加入到该房间的 socket（即用户B）才能接收到这条消息
     io.to(roomName).emit('privateMessage', messageData);
