@@ -15,8 +15,7 @@ io.listen(4000);
 
 const joinedUsers = new Map(); // 建立加入公開聊天室的users物件
 const leftUsers = new Map();
-// const clients = new Map();
-const privateUsers = new Map()
+
 
 io.on('connection', (socket) => {
   // 印出已連線的加入者的socket id
@@ -36,22 +35,13 @@ io.on('connection', (socket) => {
     io.emit('create-message', messageData); // 將完整的訊息資料發送給客戶端
   });
 
-  socket.on('privateUser-joined', (data) => {
-    privateUsers.set(socket.id, data)
-    console.log('User joined, ID:', socket.id);
-    console.log(`User ${data.currentMemberInfo.name} has joined.`);
-    console.log(privateUsers.values())
-    io.emit('privateUser-joined', privateUsers.values()); // 將完整的用戶發送給客戶端
-  });
-
-
   socket.on('privateMessage', ({ receiverId, value }) => {
     // 构建房间名
     const roomName = `${socket.id}-${receiverId}`;
     
     // 让当前 socket 加入到该房间
     socket.join(roomName);
-    const data = privateUsers.get(socket.id)
+    const data = joinedUsers.get(socket.id)
     const messageData = { message: value, sender: data };
     console.log(messageData)
     // 将消息发送到该房间，只有加入到该房间的 socket（即用户B）才能接收到这条消息
