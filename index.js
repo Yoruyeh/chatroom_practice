@@ -56,23 +56,25 @@ io.on('connection', (socket) => {
     socket.join(roomName);
     // 訊息資料包含sender的data
     const data = joinedUsers.get(socket.id)
-    const messageData = { message: value, sender: data, room: roomName };
-
-    // 將用戶加入私訊過的users物件
-    if (!userChatPartners.has(senderId)) {
-        userChatPartners.set(senderId, []);
-    }
-    if (!userChatPartners.get(senderId).find(user => user.id === receiverId)) {
-        userChatPartners.get(senderId).push(userInfo);
-    }
+    const messageData = { message: value, sender: data, receiver: userInfo, room: roomName };
 
     // 將訊息發送到該房間，只有進入房間的人才能看見訊息
     io.to(roomName).emit('private-message', messageData);
   });
 
-  socket.on('get-chat-partners', () => {
-    const userId = joinedUsers.get(socket.id).id;
-    const chatPartners = userChatPartners.get(userId) || [];
+  socket.on('get-chat-partners', (userInfo) => {
+    // 用socket.id取出sender的userId
+    const senderId = joinedUsers.get(socket.id).id
+    const receiverId = userInfo.id
+    // 將用戶加入私訊過的users物件
+    if (!userChatPartners.has(senderId)) {
+      userChatPartners.set(senderId, []);
+    }
+    if (!userChatPartners.get(senderId).find(user => user.id === receiverId)) {
+      userChatPartners.get(senderId).push(userInfo);
+    }
+    console.log(userChatPartners)
+    const chatPartners = userChatPartners.get(senderId) || [];
     io.emit('get-chat-partners', chatPartners);
   });
 
