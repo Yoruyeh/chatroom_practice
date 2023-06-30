@@ -18,8 +18,6 @@ io.listen(4000);
 const joinedUsers = new Map(); 
 // 建立離線的users物件
 const leftUsers = new Map();
-// 建立私訊過的users物件
-const userChatPartners = new Map()
 
 io.on('connection', (socket) => {
   // 印出已連線的加入者的socket id
@@ -62,21 +60,6 @@ io.on('connection', (socket) => {
     io.to(roomName).emit('private-message', messageData);
   });
 
-  socket.on('get-chat-partners', (userInfo) => {
-    // 用socket.id取出sender的userId
-    const senderId = joinedUsers.get(socket.id).id
-    const receiverId = userInfo.id
-    // 將用戶加入私訊過的users物件
-    if (!userChatPartners.has(senderId)) {
-      userChatPartners.set(senderId, []);
-    }
-    if (!userChatPartners.get(senderId).find(user => user.id === receiverId)) {
-      userChatPartners.get(senderId).push(userInfo);
-    }
-    console.log(userChatPartners)
-    const chatPartners = userChatPartners.get(senderId) || [];
-    io.emit('get-chat-partners', chatPartners);
-  });
 
   socket.on('disconnect', () => {
     console.log('User disconnected, ID:', socket.id);
