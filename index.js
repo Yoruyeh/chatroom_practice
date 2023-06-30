@@ -18,6 +18,7 @@ io.listen(4000);
 const joinedUsers = new Map(); 
 // 建立離線的users物件
 const leftUsers = new Map();
+// 建立私訊過的users物件
 const userChatPartners = new Map()
 
 io.on('connection', (socket) => {
@@ -55,16 +56,15 @@ io.on('connection', (socket) => {
     socket.join(roomName);
     // 訊息資料包含sender的data
     const data = joinedUsers.get(socket.id)
-    const messageData = { message: value, sender: data };
+    const messageData = { message: value, sender: data, room: roomName };
 
-    // 将对方的信息添加到用户的对话列表中
+    // 將用戶加入私訊過的users物件
     if (!userChatPartners.has(senderId)) {
         userChatPartners.set(senderId, []);
     }
     if (!userChatPartners.get(senderId).find(user => user.id === receiverId)) {
         userChatPartners.get(senderId).push(userInfo);
     }
-    console.log('user-partners: ', userChatPartners)
 
     // 將訊息發送到該房間，只有進入房間的人才能看見訊息
     io.to(roomName).emit('private-message', messageData);
