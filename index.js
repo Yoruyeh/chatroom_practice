@@ -33,17 +33,17 @@ io.on('connection', (socket) => {
   });
 
   // 監聽create-message事件，msg為當前用戶在公開聊天室input裡輸入的value
-  socket.on('create-message', ({ value, sendTime }) => {
+  socket.on('create-message', ({ value, now }) => {
     // 用socket.id來取得sender的data
     const data = joinedUsers.get(socket.id) 
     // 訊息資料包含sender的data
-    const messageData = { message: value, sender: data, time: sendTime }; 
+    const messageData = { message: value, sender: data, time: now }; 
     console.log('Message from user', socket.id, ':', messageData);
     // 將完整的訊息資料發送給客戶端
     io.emit('create-message', messageData); 
   });
 
-  socket.on('private-message', ({ userInfo, value }) => {
+  socket.on('private-message', ({ userInfo, value, now }) => {
     // 用socket.id取出sender的userId
     const senderId = joinedUsers.get(socket.id).id
     const receiverId = userInfo.id
@@ -54,8 +54,7 @@ io.on('connection', (socket) => {
     socket.join(roomName);
     // 訊息資料包含sender的data
     const data = joinedUsers.get(socket.id)
-    const messageData = { message: value, sender: data, receiver: userInfo, room: roomName };
-
+    const messageData = { message: value, sender: data, receiver: userInfo, room: roomName, time: now };
     // 將訊息發送到該房間，只有進入房間的人才能看見訊息
     io.to(roomName).emit('private-message', messageData);
   });
